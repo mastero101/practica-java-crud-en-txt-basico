@@ -10,6 +10,8 @@ public class RegistroUsuario extends JFrame {
     private JTextField txtCorreo;
     private DefaultTableModel tableModel;
     private Connection conexion;
+    private JTable tablaUsuarios;
+    private JPanel panelEliminar;
 
     public RegistroUsuario() {
         // Configuración del frame
@@ -43,7 +45,7 @@ public class RegistroUsuario extends JFrame {
         registroPanel.add(btnRegistrar);
 
         // Tabla para mostrar y editar los usuarios registrados
-        JTable tablaUsuarios = new JTable();
+        tablaUsuarios = new JTable();
         tableModel = new DefaultTableModel(new Object[]{"ID", "Nombre", "Contraseña", "Correo"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -53,7 +55,7 @@ public class RegistroUsuario extends JFrame {
         tablaUsuarios.setModel(tableModel);
 
         // Panel para el botón "Eliminar"
-        JPanel panelEliminar = new JPanel();
+        panelEliminar = new JPanel();
         panelEliminar.setLayout(new FlowLayout(FlowLayout.RIGHT)); // Alineación a la derecha
 
         JButton btnEliminar = new JButton("Eliminar");
@@ -74,7 +76,7 @@ public class RegistroUsuario extends JFrame {
         // Acción del botón Eliminar
         btnEliminar.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                eliminarUsuario(tablaUsuarios);
+                eliminarUsuariosSeleccionados(tablaUsuarios);
             }
         });
 
@@ -86,6 +88,9 @@ public class RegistroUsuario extends JFrame {
 
         // Agregar panel al frame
         add(panel);
+
+        BotonEditar();
+        KeyListener();
 
         // Mostrar el frame
         setVisible(true);
@@ -149,24 +154,79 @@ public class RegistroUsuario extends JFrame {
         }
     }
 
-    private void eliminarUsuario(JTable tablaUsuarios) {
-        int filaSeleccionada = tablaUsuarios.getSelectedRow();
-        if (filaSeleccionada != -1) {
-            int idUsuario = (int) tablaUsuarios.getValueAt(filaSeleccionada, 0);
-            try {
-                String sql = "DELETE FROM usuarios WHERE id = ?";
-                PreparedStatement statement = conexion.prepareStatement(sql);
-                statement.setInt(1, idUsuario);
-                statement.executeUpdate();
-                JOptionPane.showMessageDialog(this, "Usuario eliminado correctamente.");
-                cargarUsuarios();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al eliminar usuario.", "Error", JOptionPane.ERROR_MESSAGE);
+    private void eliminarUsuariosSeleccionados(JTable tablaUsuarios) {
+        int[] filasSeleccionadas = tablaUsuarios.getSelectedRows();
+        if (filasSeleccionadas.length > 0) {
+            int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar los usuarios seleccionados?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
+            if (confirmacion == JOptionPane.YES_OPTION) {
+                try {
+                    PreparedStatement statement = conexion.prepareStatement("DELETE FROM usuarios WHERE id = ?");
+                    for (int fila : filasSeleccionadas) {
+                        int idUsuario = (int) tablaUsuarios.getValueAt(fila, 0);
+                        statement.setInt(1, idUsuario);
+                        statement.addBatch();
+                    }
+                    statement.executeBatch();
+                    JOptionPane.showMessageDialog(this, "Usuarios eliminados correctamente.");
+                    cargarUsuarios();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al eliminar usuarios.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         } else {
-            JOptionPane.showMessageDialog(this, "Seleccione un usuario para eliminar.", "Advertencia", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Seleccione al menos un usuario para eliminar.", "Advertencia", JOptionPane.WARNING_MESSAGE);
         }
+    }
+    
+
+    private void BotonEditar() {
+        JButton btnEditar = new JButton("Editar");
+        panelEliminar.add(btnEditar);
+    
+        // Acción del botón Editar
+        btnEditar.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int filaSeleccionada = tablaUsuarios.getSelectedRow();
+                editarUsuario(filaSeleccionada);
+            }
+        });
+    }
+    
+    private void editarUsuario(int filaSeleccionada) {
+        if (filaSeleccionada != -1) {
+            String nombre = (String) tablaUsuarios.getValueAt(filaSeleccionada, 1);
+            String contraseña = (String) tablaUsuarios.getValueAt(filaSeleccionada, 2);
+            String correo = (String) tablaUsuarios.getValueAt(filaSeleccionada, 3);
+            int idUsuario = (int) tablaUsuarios.getValueAt(filaSeleccionada, 0);
+            try {
+                String sql = "UPDATE usuarios SET nombre = ?, contraseña = ?, correo = ? WHERE id = ?";
+                PreparedStatement statement = conexion.prepareStatement(sql);
+                statement.setString(1, nombre);
+                statement.setString(2, contraseña);
+                statement.setString(3, correo);
+                statement.setInt(4, idUsuario);
+                statement.executeUpdate();
+                JOptionPane.showMessageDialog(this, "Usuario actualizado correctamente.");
+                cargarUsuarios(); // Recargar usuarios después de la actualización
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al actualizar usuario.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void KeyListener() {
+        tablaUsuarios.addKeyListener(new KeyAdapter() {
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    int filaSeleccionada = tablaUsuarios.getSelectedRow();
+                    if (filaSeleccionada != -1) {
+                        editarUsuario(filaSeleccionada);
+                    }
+                }
+            }
+        });
     }
 
     public static void main(String[] args) {
