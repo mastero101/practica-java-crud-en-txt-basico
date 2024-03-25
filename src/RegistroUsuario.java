@@ -41,7 +41,7 @@ public class RegistroUsuario extends JFrame {
         registroPanel.add(txtContraseña);
         registroPanel.add(lblCorreo);
         registroPanel.add(txtCorreo);
-        registroPanel.add(new JLabel()); // Espacio en blanco
+        registroPanel.add(new JLabel());
         registroPanel.add(btnRegistrar);
 
         // Tabla para mostrar y editar los usuarios registrados
@@ -98,8 +98,8 @@ public class RegistroUsuario extends JFrame {
 
     private void conectarBD() {
         try {
-            String url = "jdbc:mysql://localhost:3306/java_prueba";
-            String usuario = "mastero";
+            String url = "jdbc:mysql://192.168.1.89:3306/java_prueba";
+            String usuario = "root";
             String contraseña = "alejandrof15";
             conexion = DriverManager.getConnection(url, usuario, contraseña);
         } catch (SQLException ex) {
