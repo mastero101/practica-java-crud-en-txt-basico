@@ -100,7 +100,7 @@ public class RegistroUsuario extends JFrame {
         try {
             String url = "jdbc:mysql://192.168.1.89:3306/java_prueba";
             String usuario = "root";
-            String contraseña = "alejandrof15";
+            String contraseña = "123456";
             conexion = DriverManager.getConnection(url, usuario, contraseña);
         } catch (SQLException ex) {
             ex.printStackTrace();
